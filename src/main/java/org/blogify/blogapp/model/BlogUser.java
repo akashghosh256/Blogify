@@ -28,7 +28,7 @@ public class BlogUser implements UserDetails {
     @Column(name = "username", nullable = false, unique = true)
     private String username;
 
-    @JsonIgnore // just in case Jackson tries to betray us
+    @JsonIgnore // Ignore password during JSON serialization
     @Length(min = MIN_PASSWORD_LENGTH, message = "Password must be at least " + MIN_PASSWORD_LENGTH + " characters long")
     @NotEmpty(message = "Please enter the password")
     @Column(name = "password", nullable = false)
@@ -40,7 +40,7 @@ public class BlogUser implements UserDetails {
     @OneToMany(mappedBy = "user")
     private Collection<Post> posts;
 
-    @ManyToMany(cascade = CascadeType.REMOVE)
+    @ManyToMany(cascade = CascadeType.ALL) // Updated to ALL to include persist operations
     @JoinTable(
             name = "users_authorities",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -50,22 +50,22 @@ public class BlogUser implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return true; // Adjust as needed
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return true; // Adjust as needed
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return true; // Adjust as needed
     }
 
     @Override
     public boolean isEnabled() {
-        return this.enabled;
+        return this.enabled != null && this.enabled; // Ensure null checks
     }
 
     @Override
@@ -73,7 +73,6 @@ public class BlogUser implements UserDetails {
         return "BlogUser{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", authorities=" + authorities +
                 '}';
     }

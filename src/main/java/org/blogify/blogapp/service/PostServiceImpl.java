@@ -4,6 +4,7 @@ import org.blogify.blogapp.model.Post;
 import org.blogify.blogapp.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -19,22 +20,28 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public Optional<Post> findById(Long id) {
+        return postRepository.findById(id);
+    }
+    @Override
     public Optional<Post> getById(Long id) {
         return postRepository.findById(id);
     }
 
     @Override
-    public Collection<Post> getAll() {
+    public Collection<Post> findAll() {
         return postRepository.findAllByOrderByCreationDateDesc();
     }
 
     @Override
+    @Transactional
     public Post save(Post post) {
-        return postRepository.saveAndFlush(post);
+        return postRepository.save(post);
     }
 
     @Override
-    public void delete(Post post) {
-        postRepository.delete(post);
+    @Transactional
+    public void deleteById(Long id) {
+        postRepository.deleteById(id);
     }
 }

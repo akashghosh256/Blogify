@@ -33,11 +33,10 @@ public class Post {
     private String body;
 
     @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "creation_date", nullable = false, updatable = false)
     private Date creationDate;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     private Collection<Comment> comments;
 
     @NotNull
@@ -52,10 +51,6 @@ public class Post {
                 ", title='" + title + '\'' +
                 ", body='" + body + '\'' +
                 ", creationDate=" + creationDate +
-//                ", comments=" + comments +
-//                ", comments=" + comments.stream().map(Comment::toString).collect(Collectors.joining(",")) +
-//                ", username=" + user.getUsername() +
-//                ", user=" + user + // this way it is making the inf loop
                 '}';
     }
 }

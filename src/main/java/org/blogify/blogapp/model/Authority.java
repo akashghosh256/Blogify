@@ -23,6 +23,11 @@ public class Authority implements GrantedAuthority {
     private Collection<BlogUser> users;
 
     @Override
+    public String getAuthority() {
+        return authority;
+    }
+
+    @Override
     public String toString() {
         return "Authority{" +
                 "id=" + id +

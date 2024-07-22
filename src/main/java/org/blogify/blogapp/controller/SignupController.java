@@ -3,24 +3,28 @@ package org.blogify.blogapp.controller;
 import org.blogify.blogapp.model.BlogUser;
 import org.blogify.blogapp.service.BlogUserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.bind.support.SessionStatus;
+import org.springframework.web.bind.annotation.SessionStatus;
 
 import javax.management.relation.RoleNotFoundException;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Controller
-@SessionAttributes("blogUser")
 public class SignupController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SignupController.class);
 
     private final BlogUserService blogUserService;
 
@@ -31,34 +35,31 @@ public class SignupController {
 
     @GetMapping("/signup")
     public String getRegisterForm(Model model) {
-        // create new BlogUser instance and pass it to registerForm view template
-        BlogUser blogUser = new BlogUser();
-        model.addAttribute("blogUser", blogUser);
+        model.addAttribute("blogUser", new BlogUser());
         return "registerForm";
     }
 
     @PostMapping("/register")
     public String registerNewUser(@Valid @ModelAttribute BlogUser blogUser, BindingResult bindingResult, SessionStatus sessionStatus) throws RoleNotFoundException {
-        System.err.println("newUser: " + blogUser);  // for testing debugging purposes
-        // Check if username is available
+        logger.debug("Registering new user: {}", blogUser);
+
         if (blogUserService.findByUsername(blogUser.getUsername()).isPresent()) {
-//            FieldError usernameTakenError = new FieldError("blogUser","username","Username is already registered try other one or go away");
-//            bindingResult.addError(usernameTakenError);
-            bindingResult.rejectValue("username", "error.username","Username is already registered try other one or go away");
-            System.err.println("Username already taken error message");
+            bindingResult.rejectValue("username", "error.username", "Username is already registered. Try another one.");
+            logger.warn("Username already taken: {}", blogUser.getUsername());
         }
-        // Validate users fields
+
         if (bindingResult.hasErrors()) {
-            System.err.println("New user did not validate");
+            logger.debug("Validation errors occurred: {}", bindingResult.getAllErrors());
             return "registerForm";
         }
-        // Persist new blog user
-        this.blogUserService.saveNewBlogUser(blogUser);
+
+        blogUserService.saveNewBlogUser(blogUser);
+
         // Create Authentication token and login after registering new blog user
-        Authentication auth = new UsernamePasswordAuthenticationToken(blogUser, blogUser.getPassword(), blogUser.getAuthorities());
-        System.err.println("AuthToken: " + auth);  // for testing debugging purposes
+        Authentication auth = new UsernamePasswordAuthenticationToken(blogUser, null, blogUser.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
-        System.err.println("SecurityContext Principal: " + SecurityContextHolder.getContext().getAuthentication().getPrincipal());  // for testing debugging purposes
+
+        logger.info("User registered and authenticated: {}", blogUser.getUsername());
         sessionStatus.setComplete();
         return "redirect:/";
     }

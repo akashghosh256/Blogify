@@ -1,9 +1,9 @@
 package org.blogify.blogapp.service;
 
-import org.blogify.blogapp.repository.BlogUserRepository;
 import org.blogify.blogapp.model.Authority;
 import org.blogify.blogapp.model.BlogUser;
 import org.blogify.blogapp.repository.AuthorityRepository;
+import org.blogify.blogapp.repository.BlogUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,6 +19,7 @@ import java.util.Optional;
 public class BlogUserServiceImpl implements BlogUserService {
 
     private static final String DEFAULT_ROLE = "ROLE_USER";
+
     private final BCryptPasswordEncoder bcryptEncoder;
     private final BlogUserRepository blogUserRepository;
     private final AuthorityRepository authorityRepository;
@@ -32,13 +33,8 @@ public class BlogUserServiceImpl implements BlogUserService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<BlogUser> blogUser = blogUserRepository.findByUsername(username);
-        if (blogUser.isPresent()) {
-            return blogUser.get();
-        } else {
-            throw new UsernameNotFoundException("No user found with username " + username);
-        }
-//        return blogUser.orElseThrow(() -> new UsernameNotFoundException("No user found with username \" + username"));
+        return blogUserRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("No user found with username " + username));
     }
 
     @Override
@@ -48,24 +44,17 @@ public class BlogUserServiceImpl implements BlogUserService {
 
     @Override
     public BlogUser saveNewBlogUser(BlogUser blogUser) throws RoleNotFoundException {
-        System.err.println("saveNewBlogUser: " + blogUser);  // for testing debugging purposes
-        // Encode plaintext password with password encoder
-//        blogUser.setPassword(PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(blogUser.getPassword()).substring(8));
-        blogUser.setPassword(this.bcryptEncoder.encode(blogUser.getPassword())); // explicit bcrypt encoder so better approach ?
-        // set account to enabled by default
+        // Encode plaintext password
+        blogUser.setPassword(bcryptEncoder.encode(blogUser.getPassword()));
+        // Set account to enabled by default
         blogUser.setEnabled(true);
         // Set default Authority/Role to new blog user
-        Optional<Authority> optionalAuthority = this.authorityRepository.findByAuthority(DEFAULT_ROLE);
-        System.err.println("optionalAuthority: " + optionalAuthority);  // for testing debugging purposes
-        if (optionalAuthority.isPresent()) {
-            Authority authority = optionalAuthority.get();
-            Collection<Authority> authorities = Collections.singletonList(authority);
-            blogUser.setAuthorities(authorities);
-            System.err.println("blogUser after Roles: " + blogUser);  // for testing debugging purposes
-//            return blogUserRepository.save(blogUser);
-            return this.blogUserRepository.saveAndFlush(blogUser);
-        } else {
-            throw new RoleNotFoundException("Default role not found for blog user with username " + blogUser.getUsername());
-        }
+        Authority authority = authorityRepository.findByAuthority(DEFAULT_ROLE)
+                .orElseThrow(() -> new RoleNotFoundException("Default role not found for blog user with username " + blogUser.getUsername()));
+
+        Collection<Authority> authorities = Collections.singletonList(authority);
+        blogUser.setAuthorities(authorities);
+
+        return blogUserRepository.save(blogUser);
     }
 }

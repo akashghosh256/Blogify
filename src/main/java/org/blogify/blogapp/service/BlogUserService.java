@@ -12,4 +12,5 @@ public interface BlogUserService extends UserDetailsService {
 
     BlogUser saveNewBlogUser(BlogUser blogUser) throws RoleNotFoundException;
 
+    // Additional methods if needed
 }

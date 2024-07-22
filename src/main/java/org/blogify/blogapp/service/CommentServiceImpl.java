@@ -4,9 +4,13 @@ import org.blogify.blogapp.model.Comment;
 import org.blogify.blogapp.repository.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
-public class CommentServiceImpl implements CommentService{
+public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
 
@@ -16,12 +20,24 @@ public class CommentServiceImpl implements CommentService{
     }
 
     @Override
+    @Transactional
     public Comment save(Comment comment) {
-        return commentRepository.saveAndFlush(comment);
+        return commentRepository.save(comment);
     }
 
     @Override
-    public void delete(Comment comment) {
-        commentRepository.delete(comment);
+    @Transactional
+    public void delete(Long id) {
+        commentRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Comment> findById(Long id) {
+        return commentRepository.findById(id);
+    }
+
+    @Override
+    public List<Comment> findAll() {
+        return commentRepository.findAll();
     }
 }
