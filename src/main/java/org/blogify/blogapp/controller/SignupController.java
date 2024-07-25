@@ -5,7 +5,6 @@ import org.blogify.blogapp.service.BlogUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionStatus;
 
-import javax.management.relation.RoleNotFoundException;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +38,7 @@ public class SignupController {
     }
 
     @PostMapping("/register")
-    public String registerNewUser(@Valid @ModelAttribute BlogUser blogUser, BindingResult bindingResult, SessionStatus sessionStatus) throws RoleNotFoundException {
+    public String registerNewUser(@Valid @ModelAttribute BlogUser blogUser, BindingResult bindingResult, SessionStatus sessionStatus) {
         logger.debug("Registering new user: {}", blogUser);
 
         if (blogUserService.findByUsername(blogUser.getUsername()).isPresent()) {
@@ -53,14 +51,19 @@ public class SignupController {
             return "registerForm";
         }
 
-        blogUserService.saveNewBlogUser(blogUser);
+        try {
+            blogUserService.saveNewBlogUser(blogUser);
+            // Create Authentication token and login after registering new blog user
+            Authentication auth = new UsernamePasswordAuthenticationToken(blogUser, null, blogUser.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
-        // Create Authentication token and login after registering new blog user
-        Authentication auth = new UsernamePasswordAuthenticationToken(blogUser, null, blogUser.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        logger.info("User registered and authenticated: {}", blogUser.getUsername());
-        sessionStatus.setComplete();
-        return "redirect:/";
+            logger.info("User registered and authenticated: {}", blogUser.getUsername());
+            sessionStatus.setComplete();
+            return "redirect:/";
+        } catch (Exception e) {
+            logger.error("Error during user registration: {}", e.getMessage());
+            bindingResult.reject("registrationError", "An error occurred during registration. Please try again.");
+            return "registerForm";
+        }
     }
 }
